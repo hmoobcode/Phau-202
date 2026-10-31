@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="hmn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<title>Cov Ntseeg Yexus Phau Nkauj</title>
+
+<style>
+:root {
+  --bg: #fff;
+  --surface: #fff;
+  --soft: #f5f4fc;
+  --text: #29263b;
+  --muted: #88849a;
+  --accent: #000000;
+  --border: #eae8f1;
+  --shadow: 0 5px 24px rgba(44,35,91,.07);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, "Noto Sans", sans-serif;
+}
+
+body {
+  overflow: hidden;
+}
+
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  max-width: 760px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+header {
+  flex-shrink: 0;
+  background: var(--surface);
+  padding: 12px 15px 9px;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.brand-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-box {
+  height: 45px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--soft);
+}
+
+.search-box input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.search-box input::placeholder {
+  color: var(--muted);
+}
+
+.icon-button {
+  border: 0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: var(--soft);
+  color: var(--text);
+  width: 43px;
+  height: 43px;
+  font-size: 20px;
+}
+
+.play-button {
+  background: var(--accent);
+  color: #fff;
+  width: 45px;
+  height: 45px;
+  font-size: 22px;
+  box-shadow: 0 4px 12px #6858d933;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.play-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.search-results {
+  display: none;
+  max-height: 34vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.search-results.show {
+  display: block;
+}
+
+.result-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  padding: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.result-item:last-child {
+  border-bottom: 0;
+}
+
+.result-number {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.result-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-empty {
+  text-align: center;
+  padding: 20px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* กล่องแสดงผลขนาด 1x1 ตรงกลาง พร้อมข้อความแจ้งเตือนสีเหลืองกึ่งกลางและกระพริบ */
+.player-panel {
+  display: none;
+  margin: 9px auto 0 auto;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #111;
+  max-width: 400px;
+}
+
+.player-panel.show {
+  display: block;
+}
+
+@keyframes blinkText {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+.offline-notice {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #ffeb3b; /* สีเหลือง */
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 8px;
+  z-index: 10;
+  display: none;
+  animation: blinkText 1s infinite; /* เอฟเฟกต์กระพริบ */
+}
+
+.offline-notice span.wifi-icon {
+  font-size: 24px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.offline-notice.show {
+  display: block;
+}
+
+.video-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 150px;
+  display: block;
+  border: 0;
+  background: #111;
+}
+
+/* Lyrics page */
+
+#lyricsPage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.song-meta {
+  flex-shrink: 0;
+  padding: 12px 19px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  margin-bottom: 19px;
+}
+
+.song-meta::after {
+  content: "";
+  position: absolute;
+  left: 19px;
+  bottom: -1px;
+  width: 90%;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 5px;
+}
+
+.song-badge {
+  color: var(--accent);
+  background: #f0edff;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 20px;
+  font-weight: 750;
+  flex-shrink: 0;
+}
+
+.song-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #0000FF; /* กำหนดให้ชื่อเพลงเป็นสีน้ำเงิน */
+}
+
+#lyricsViewport {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+  padding: 0 20px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #d6d1ee transparent;
+}
+
+#lyricsContent {
+  display: block;
+  width: 100%;
+  min-height: min-content;
+  font-size: 18px;
+  line-height: 1.85;
+  font-weight: 700; /* ทำให้ตัวอักษรเนื้อเพลงเป็นตัวหนา */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  transform-origin: top left;
+  padding-bottom: 24px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.lyric-line {
+  min-height: 1em;
+}
+
+#lyricsContent .blank {
+  height: .55em;
+}
+
+#toast {
+  position: fixed;
+  z-index: 99;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translate(-50%, 12px);
+  max-width: 85vw;
+  padding: 11px 16px;
+  background: #29263b;
+  color: #fff;
+  font-size: 13px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: .2s;
+  text-align: center;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.loading {
+  color: var(--muted);
+  text-align: center;
+  padding: 30px 12px;
+  font-size: 14px;
+}
+
+@media (min-width: 600px) {
+  header {
+    padding: 16px 22px 12px;
+  }
+  .song-meta {
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+  .song-meta::after {
+    left: 25px;
+  }
+  #lyricsViewport {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <div class="brand-info"></div>
+    </div>
+
+    <div class="search-row">
+      <label class="search-box">
+        <span>⌕</span>
+        <input id="searchInput" type="search"
+          placeholder="Tshawb nrhiav nkauj..."
+          autocomplete="off"
+          aria-label="Tshawb nrhiav nkauj">
+        <button id="clearSearch" type="button"
+          style="display:none;border:0;background:transparent;color:#888;font-size:18px">×</button>
+      </label>
+
+      <!-- ปุ่มกดเล่น/ปิด -->
+      <button id="playButton" class="icon-button play-button"
+        type="button" aria-label="Mloog nkauj" title="Mloog nkauj">▶</button>
+    </div>
+
+    <div id="searchResults" class="search-results"></div>
+
+    <!-- กล่องแสดงผลขนาด 1x1 ตรงกลาง พร้อมข้อความแจ้งเตือนสีเหลืองกึ่งกลางและกระพริบ -->
+    <div id="playerPanel" class="player-panel">
+      <div id="offlineNotice" class="offline-notice"><span class="wifi-icon">📶</span> Yuav Tsum Pawj Nev</div>
+      <iframe id="videoFrame" class="video-frame"
+        title="Music player"
+        allow="autoplay; encrypted-media; picture-in-picture"
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen></iframe>
+    </div>
+  </header>
+
+  <main id="lyricsPage">
+    <div class="song-meta">
+      <span id="songBadge" class="song-badge">01</span>
+      <h1 id="songTitle" class="song-title">กำลังโหลด...</h1>
+    </div>
+
+    <div id="lyricsViewport">
+      <div id="lyricsContent" class="loading">
+        กำลัง nyeem phau nkauj...
+      </div>
+    </div>
+  </main>
+
+  <footer id="bottomBar"></footer>
+
+</div>
+
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+
+let songs = [];
+let currentIndex = 0;
+let musicLinks = {};
+const baseFontSize = 21;
+let currentFontSize = baseFontSize;
+
+const $ = id => document.getElementById(id);
+
+const searchInput = $("searchInput");
+const searchResults = $("searchResults");
+const songTitle = $("songTitle");
+const lyricsContent = $("lyricsContent");
+const lyricsViewport = $("lyricsViewport");
+const playerPanel = $("playerPanel");
+const videoFrame = $("videoFrame");
+const playButton = $("playButton");
+const offlineNotice = $("offlineNotice");
+const toast = $("toast");
+
+let toastTimer = null;
+let isWaitingForOnline = false;
+
+function showToast(message) {
+  clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2400);
+}
+
+async function loadAppData() {
+  lyricsContent.textContent = "กำลังโหลดเนื้อเพลง...";
+  lyricsContent.classList.add("loading");
+
+  try {
+    const responses = await Promise.all([
+      fetch("./phau202.txt", { cache: "no-store" }),
+      fetch("./music.js", { cache: "no-store" })
+    ]);
+
+    if (!responses[0].ok) throw new Error("Cannot load phau202.txt");
+    if (!responses[1].ok) throw new Error("Cannot load music.js");
+
+    const txt = await responses[0].text();
+    const musicText = await responses[1].text();
+
+    songs = parseSongs(txt);
+
+    const musicBlob = new Blob(
+      [musicText, "\n;window.__loadedMusicLinks = window.MUSIC_LINKS || {};"],
+      { type: "text/javascript" }
+    );
+    const musicUrl = URL.createObjectURL(musicBlob);
+
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = musicUrl;
+        script.onload = () => { script.remove(); resolve(); };
+        script.onerror = () => { script.remove(); reject(new Error("Cannot read music.js")); };
+        document.head.appendChild(script);
+      });
+
+      musicLinks = window.__loadedMusicLinks || {};
+      delete window.__loadedMusicLinks;
+    } finally {
+      URL.revokeObjectURL(musicUrl);
+    }
+
+    if (!songs.length) throw new Error("No songs found");
+
+    currentIndex = 0;
+    renderSong();
+    showToast("Nyeem tau " + songs.length + " zaj nkauj lawm");
+
+  } catch (error) {
+    console.error(error);
+    lyricsContent.classList.add("loading");
+    lyricsContent.textContent = "Nyeem ntaub ntawv tsis tau. Thov xyuas phau202.txt thiab music.js.";
+    songTitle.textContent = "Tsis tau nyeem phau nkauj";
+    showToast("Nyeem ntaub ntawv tsis tau");
+  }
+}
+
+function parseSongs(text) {
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
+  const result = [];
+  let current = null;
+
+  for (const originalLine of lines) {
+    const line = originalLine.trim();
+    const match = line.match(/^\((.+)\)$/);
+
+    if (match) {
+      if (current) {
+        current.lyrics = current.lines.join("\n").trim();
+        delete current.lines;
+        result.push(current);
+      }
+      current = { number: result.length + 1, title: match[1].trim(), lines: [] };
+    } else if (current) {
+      current.lines.push(originalLine);
+    }
+  }
+
+  if (current) {
+    current.lyrics = current.lines.join("\n").trim();
+    delete current.lines;
+    result.push(current);
+  }
+  return result;
+}
+
+function updatePlayButtonState() {
+  if (!songs.length) return;
+  const song = songs[currentIndex];
+  const hasLink = Boolean(musicLinks[song.number] && musicLinks[song.number].trim());
+
+  if (!hasLink) {
+    playButton.disabled = true;
+    closePlayer();
+  } else {
+    playButton.disabled = false;
+  }
+}
+
+function renderSong() {
+  if (!songs.length) return;
+
+  const song = songs[currentIndex];
+  songTitle.textContent = song.title;
+  songTitle.title = song.title;
+  $("songBadge").textContent = String(song.number).padStart(2, "0");
+
+  lyricsContent.classList.remove("loading");
+  lyricsContent.replaceChildren();
+
+  const fragment = document.createDocumentFragment();
+  for (const line of song.lyrics.split("\n")) {
+    const div = document.createElement("div");
+    div.className = "lyric-line";
+    if (line.trim() === "") {
+      div.classList.add("blank");
+      div.textContent = "\u00A0";
+    } else {
+      div.textContent = line;
+    }
+    fragment.appendChild(div);
+  }
+
+  lyricsContent.appendChild(fragment);
+  lyricsViewport.scrollTop = 0;
+  searchResults.classList.remove("show");
+  searchInput.blur();
+  closePlayer();
+  
+  isWaitingForOnline = false;
+  updatePlayButtonState();
+}
+
+function normalize(value) {
+  return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function searchSongs() {
+  const query = normalize(searchInput.value);
+  $("clearSearch").style.display = query ? "block" : "none";
+
+  if (!query) {
+    searchResults.classList.remove("show");
+    searchResults.replaceChildren();
+    return;
+  }
+
+  const matches = songs.filter(song => {
+    return String(song.number).includes(query) || normalize(song.title).includes(query);
+  }).slice(0, 60);
+
+  searchResults.replaceChildren();
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "result-empty";
+    empty.textContent = "Tsis pom zaj nkauj no";
+    searchResults.appendChild(empty);
+  } else {
+    const fragment = document.createDocumentFragment();
+    for (const song of matches) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "result-item";
+
+      const number = document.createElement("span");
+      number.className = "result-number";
+      number.textContent = String(song.number).padStart(2, "0");
+
+      const title = document.createElement("span");
+      title.className = "result-name";
+      title.textContent = song.title;
+
+      button.append(number, title);
+      button.addEventListener("click", () => {
+        currentIndex = songs.indexOf(song);
+        renderSong();
+      });
+      fragment.appendChild(button);
+    }
+    searchResults.appendChild(fragment);
+  }
+  searchResults.classList.add("show");
+}
+
+searchInput.addEventListener("input", searchSongs);
+
+$("clearSearch").addEventListener("click", () => {
+  searchInput.value = "";
+  searchSongs();
+  searchInput.focus();
+});
+
+function changeSong(direction) {
+  if (!songs.length) return;
+  currentIndex = (currentIndex + direction + songs.length) % songs.length;
+  renderSong();
+}
+
+function getEmbedUrl(url) {
+  if (typeof url !== "string") return "";
+  const value = url.trim();
+  if (!value) return "";
+
+  if (value.includes("drive.google.com")) {
+    let previewUrl = value.replace(/\/view.*$/, "/preview").replace(/\/edit.*$/, "/preview");
+    if (!previewUrl.includes("usp=sharing")) {
+      previewUrl += (previewUrl.includes("?") ? "&" : "?") + "usp=sharing";
+    }
+    return previewUrl;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const host = parsed.hostname.replace(/^www\./, "");
+    let videoId = "";
+    if (host === "youtu.be") {
+      videoId = parsed.pathname.split("/").filter(Boolean)[0] || "";
+    } else if (host.includes("youtube.com")) {
+      if (parsed.pathname === "/watch") {
+        videoId = parsed.searchParams.get("v") || "";
+      } else {
+        const match = parsed.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/);
+        videoId = match ? match[1] : "";
+      }
+    }
+    if (videoId) {
+      return "https://www.youtube.com/embed/" + encodeURIComponent(videoId) + "?autoplay=1&controls=1&playsinline=1&rel=0";
+    }
+  } catch (e) {}
+
+  return value;
+}
+
+function togglePlay() {
+  if (!songs.length) {
+    showToast("Tseem tab tom nyeem phau nkauj");
+    return;
+  }
+
+  if (playerPanel.classList.contains("show")) {
+    closePlayer();
+    return;
+  }
+
+  const song = songs[currentIndex];
+  const rawUrl = musicLinks[song.number] || "";
+  const embedUrl = getEmbedUrl(rawUrl);
+
+  if (!embedUrl) {
+    showToast("Tsis muaj qhov txuas nkauj");
+    return;
+  }
+
+  // ตรวจสอบสถานะการเชื่อมต่ออินเทอร์เน็ต (navigator.onLine)
+  if (navigator.onLine === false) {
+    isWaitingForOnline = true;
+    offlineNotice.classList.add("show");
+    videoFrame.src = "about:blank";
+    playerPanel.classList.add("show");
+    playButton.textContent = "✖";
+    return;
+  }
+
+  offlineNotice.classList.remove("show");
+  videoFrame.src = "about:blank";
+  playerPanel.classList.add("show");
+  videoFrame.src = embedUrl;
+  playButton.textContent = "✖";
+}
+
+function closePlayer() {
+  videoFrame.src = "about:blank";
+  playerPanel.classList.remove("show");
+  offlineNotice.classList.remove("show");
+  isWaitingForOnline = false;
+  playButton.textContent = "▶";
+}
+
+playButton.addEventListener("click", togglePlay);
+
+/* เมื่อเชื่อมต่ออินเทอร์เน็ตกลับมา แล้วผู้ใช้ค้างไว้ในสถานะรอ ให้เล่นเพลงทันที */
+window.addEventListener("online", () => {
+  if (isWaitingForOnline) {
+    offlineNotice.classList.remove("show");
+    isWaitingForOnline = false;
+    const song = songs[currentIndex];
+    const rawUrl = musicLinks[song.number] || "";
+    const embedUrl = getEmbedUrl(rawUrl);
+    if (embedUrl) {
+      videoFrame.src = embedUrl;
+    }
+  }
+});
+
+/* Zoom & Touch Handlers */
+
+function applyFontSize() {
+  lyricsContent.style.fontSize = currentFontSize + "px";
+}
+
+function resetFontSize() {
+  currentFontSize = baseFontSize;
+  applyFontSize();
+}
+
+function clampFontSize(size) {
+  return Math.max(12, Math.min(56, size));
+}
+
+let initialPinchDistance = 0;
+let initialPinchFont = baseFontSize;
+let pinchActive = false;
+let swipeActive = false;
+let startX = 0;
+let startY = 0;
+
+function distanceBetweenTouches(a, b) {
+  const dx = b.clientX - a.clientX;
+  const dy = b.clientY - a.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+lyricsViewport.addEventListener("touchstart", event => {
+  if (event.touches.length === 2) {
+    pinchActive = true;
+    swipeActive = false;
+    initialPinchDistance = distanceBetweenTouches(event.touches[0], event.touches[1]);
+    initialPinchFont = currentFontSize;
+  } else if (event.touches.length === 1) {
+    pinchActive = false;
+    swipeActive = true;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+  }
+}, { passive: true });
+
+lyricsViewport.addEventListener("touchmove", event => {
+  if (event.touches.length === 2 && pinchActive) {
+    event.preventDefault();
+    const distance = distanceBetweenTouches(event.touches[0], event.touches[1]);
+    if (initialPinchDistance > 0) {
+      currentFontSize = clampFontSize(initialPinchFont * distance / initialPinchDistance);
+      applyFontSize();
+    }
+  }
+}, { passive: false });
+
+lyricsViewport.addEventListener("touchend", event => {
+  if (pinchActive) {
+    if (event.touches.length === 0) pinchActive = false;
+    swipeActive = false;
+    return;
+  }
+
+  if (!swipeActive || event.changedTouches.length !== 1) return;
+
+  const touch = event.changedTouches[0];
+  const dx = touch.clientX - startX;
+  const dy = touch.clientY - startY;
+
+  if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    changeSong(dx < 0 ? 1 : -1);
+  }
+  swipeActive = false;
+}, { passive: true });
+
+lyricsViewport.addEventListener("dblclick", event => {
+  event.preventDefault();
+  resetFontSize();
+  showToast("Rov qab qhov loj qub lawm");
+});
+
+document.addEventListener("keydown", event => {
+  if (event.target === searchInput) {
+    if (event.key === "Escape") {
+      searchInput.value = "";
+      searchSongs();
+      searchInput.blur();
+    }
+    return;
+  }
+
+  if (event.key === "ArrowLeft") changeSong(-1);
+  if (event.key === "ArrowRight") changeSong(1);
+  if (event.key === "Escape") closePlayer();
+});
+
+loadAppData();
+</script>
+</body>
+</html>
